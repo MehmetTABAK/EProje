@@ -1,0 +1,283 @@
+﻿@{
+    ViewData["Title"] = "Profilim";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@using EProjeEntities
+@model List<Admin>
+
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container py-5">
+        <h1 class="display-4 text-white">Profilim Yönetimi</h1>
+        <p class="lead text-white-50">Kendi profilinizi kolayca yönetin</p>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row">
+        <div class="row pt-4">
+            @foreach (var admin in Model)
+            {
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="menu-card h-100 border-0 shadow-lg">
+                        <div class="card-img-container">
+                            <img src="@admin.Image" alt="@admin.Firstname @admin.Lastname" class="card-img-top">
+                            <div class="card-img-overlay d-flex align-items-end">
+                                <h3 class="card-title text-white text-shadow">@admin.Firstname @admin.Lastname</h3>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between gap-2">
+                                <a href="#">
+                                    <button class="readmore-btn edit-admin-btn"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#adminModal"
+                                            data-id="@admin.Id"
+                                            data-firstname="@admin.Firstname"
+                                            data-lastname="@admin.Lastname"
+                                            data-image="@admin.Image"
+                                            data-email="@admin.Email"
+                                            data-password="@admin.Password">
+                                        <span class="book-wrapper">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 fill="rgb(86, 69, 117)"
+                                                 viewBox="0 0 126 75"
+                                                 class="book">
+                                                <rect stroke-width="3"
+                                                      stroke="#fff"
+                                                      rx="7.5"
+                                                      height="70"
+                                                      width="121"
+                                                      y="2.5"
+                                                      x="2.5"></rect>
+                                                <line stroke-width="3" stroke="#fff" y2="75" x2="63.5" x1="63.5"></line>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M25 20H50"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M101 20H76"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M16 30L50 30"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M110 30L76 30"></path>
+                                            </svg>
+
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 fill="none"
+                                                 viewBox="0 0 65 75"
+                                                 class="book-page">
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M40 20H15"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M49 30L15 30"></path>
+                                                <path stroke-width="3"
+                                                      stroke="#fff"
+                                                      d="M2.5 2.5H55C59.1421 2.5 62.5 5.85786 62.5 10V65C62.5 69.1421 59.1421 72.5 55 72.5H2.5V2.5Z"></path>
+                                            </svg>
+                                        </span>
+                                        <span class="text"> Bilgilerimi Düzenle </span>
+                                    </button>
+                                </a>
+                                @* <a href="#">
+                            <button class="noselect delete-worker-btn" data-id="@worker.Id">
+                                <span class="text">Çalışanı Çıkar</span>
+                                <span class="icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                                        <path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"></path>
+                                    </svg>
+                                </span>
+                            </button>
+                        </a> *@
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@* <div class="d-flex justify-content-end mb-4">
+    <button class="addimg"
+            data-bs-toggle="modal"
+            data-bs-target="#workerModal">
+        <span class="addimg__text">Çalışan Ekle</span>
+        <span class="addimg__icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
+    </button>
+</div> *@
+
+<!-- Modal Başlangıcı -->
+<div class="modal fade" id="adminModal" tabindex="-1" aria-labelledby="adminModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0">
+            <div class="modal-header">
+                <h5 class="modal-title" id="categoryModalLabel">Profilim Yönetimi</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="image-upload-container mb-4">
+                            <label for="image-upload" class="upload-area">
+                                <div class="upload-content">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                    <h5>Resim Yükle</h5>
+                                    <p class="text-muted mb-1">Profilinizde görülecek resmi seçmek için tıklayın!</p>
+                                    <small class="text-muted">PNG, JPG (Max. 2MB)</small>
+                                </div>
+                                <img id="preview" class="preview-image" alt="Önizleme">
+                                <input type="file" id="image-upload" class="d-none" accept="image/*">
+                            </label>
+                            <div class="image-requirements text-muted mt-2">
+                                <small>Önerilen boyut: 800x400px</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group mb-4">
+                            <label for="adminName" class="form-label fw-bold">İsim*</label>
+                            <input type="text" class="form-control form-control-lg" id="adminName"
+                                   placeholder="Buraya isminizi yazın..." required>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label for="adminSurname" class="form-label fw-bold">Soyisim*</label>
+                            <input type="text" class="form-control form-control-lg" id="adminSurname"
+                                   placeholder="Buraya soyisminizi yazın..." required>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label for="email" class="form-label fw-bold">Email*</label>
+                            <input type="email" class="form-control form-control-lg" id="email"
+                                   placeholder="Buraya email adresinizi yazın..." required>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label for="password" class="form-label fw-bold">Şifre*</label>
+                            <input type="password" class="form-control form-control-lg" id="password"
+                                   placeholder="Buraya şifresinizi yazın..." required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Vazgeç
+                </button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" id="saveProfileBtn">
+                    <i class="fas fa-save me-2"></i>Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Modal açılırken formu ayarla
+    document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
+        button.addEventListener('click', function () {
+            const modal = document.getElementById('adminModal');
+
+            const isEdit = this.classList.contains('edit-admin-btn');
+            modal.setAttribute('data-mode', isEdit ? 'edit' : 'create');
+
+            if (isEdit) {
+                document.querySelector('input[placeholder="Buraya isminizi yazın..."]').value = this.getAttribute('data-firstname');
+                document.querySelector('input[placeholder="Buraya soyisminizi yazın..."]').value = this.getAttribute('data-lastname');
+                document.querySelector('input[placeholder="Buraya email adresinizi yazın..."]').value = this.getAttribute('data-email');
+                document.querySelector('input[placeholder="Buraya şifresinizi yazın..."]').value = this.getAttribute('data-password');
+                const image = this.getAttribute('data-image');
+                if (image) document.getElementById('preview').src = image;
+                modal.setAttribute('data-id', this.getAttribute('data-id'));
+            } else {
+                document.querySelector('input[placeholder="Buraya isminizi yazın..."]').value = "";
+                document.querySelector('input[placeholder="Buraya soyisminizi yazın..."]').value = "";
+                document.querySelector('input[placeholder="Buraya email adresinizi yazın..."]').value = "";
+                document.querySelector('input[placeholder="Buraya şifresinizi yazın..."]').value = "";
+                document.getElementById('preview').src = "";
+                modal.removeAttribute('data-id');
+            }
+        });
+    });
+
+    // Profilim güncelleme işlemi
+    document.querySelector('#adminModal .btn-primary').addEventListener('click', () => {
+        const modal = document.getElementById('adminModal');
+        const mode = modal.getAttribute('data-mode');
+        const id = modal.getAttribute('data-id');
+
+        const firstname = document.querySelector('input[placeholder="Buraya isminizi yazın..."]').value;
+        const lastname = document.querySelector('input[placeholder="Buraya soyisminizi yazın..."]').value;
+        const email = document.querySelector('input[placeholder="Buraya email adresinizi yazın..."]').value;
+        const password = document.querySelector('input[placeholder="Buraya şifresinizi yazın..."]').value;
+        const imageSrc = document.getElementById('preview').src;
+
+        const payload = {
+            id: mode === 'edit' ? id : '00000000-0000-0000-0000-000000000000',
+            firstname: firstname,
+            lastname: lastname,
+            imageSrc: imageSrc,
+            email: email,
+            password: password,
+            active: true,
+        };
+
+        const endpoint = mode === 'edit' ? '/Profile/UpdateAdmin' : '/Profile/AddAdmin';
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message || "İşlem başarısız.");
+            }
+        })
+        .catch(() => alert('Sunucu hatası oluştu.'));
+    });
+
+    // Profilim silme işlemi
+    document.querySelectorAll('.delete-admin-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const adminId = this.getAttribute('data-id');
+            if (!confirm("Bu admin silmek istiyor musunuz?")) return;
+
+            fetch('/Profile/DeleteAdmin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: parseInt(adminId) })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Silme işlemi başarısız oldu.');
+                    }
+                })
+                .catch(() => alert('Sunucu hatası oluştu.'));
+        });
+    });
+</script>
+

@@ -1,0 +1,159 @@
+﻿@{
+    ViewData["Title"] = "İşlerim";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@model List<EProjeEntities.DTOs.MyProjectsDTO>
+
+<style>
+    .user-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 30px;
+        padding: 15px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .user-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #e0e0e0;
+        margin-right: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #555;
+    }
+
+    .user-name {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .task-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+        .task-table th, .task-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .task-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .task-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .task-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+    .project-name {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .action-button {
+        padding: 6px 12px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 0.8rem;
+        border: none;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+        .action-button:hover {
+            background-color: #d0d0d0;
+        }
+</style>
+
+<div class="container">
+    <div class="user-info">
+        <div class="user-avatar">@ViewBag.AvatarInitials</div>
+        <div class="user-name">@ViewBag.FullName</div>
+    </div>
+
+    <table class="task-table">
+        <thead>
+            <tr>
+                <th>Proje Adı</th>
+                <th>İş Adı</th>
+                <th>İş Açıklaması</th>
+                <th>İşi Giren Kişi</th>
+                <th>Kayıt Tarihi</th>
+                <th>Başlangıç Tarihi</th>
+                <th>Harcanan Zaman</th>
+                <th>Son Düzenleyen</th>
+                <th>Son Düzenleme</th>
+                <th>İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var project in Model)
+            {
+                <tr>
+                    <td>@project.ProjectName</td>
+                    <td>@project.WorkName</td>
+                    <td>@project.WorkDetail</td>
+                    <td>@project.RegistrationUserName</td>
+                    <td>@project.RegistrationDate.ToString("dd.MM.yyyy HH:mm")</td>
+                    <td>@(project.WorkStartDate?.ToString("dd.MM.yyyy HH:mm") ?? "-")</td>
+                    <td>@(project.TimeSpend ?? "-")</td>
+                    <td>@(project.CorrectionUserName ?? "-")</td>
+                    <td>@(project.CorrectionDate?.ToString("dd.MM.yyyy HH:mm") ?? "-")</td>
+                    <td>
+                        <div class="action-buttons">
+                            @switch (project.Status)
+                            {
+                                case 1: // Yapılacak
+                                        <button class="action-button btn-primary" title="Başlat">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                    break;
+
+                                case 2: // Yapılıyor
+                                        <button class="action-button btn-warning" title="Duraklat">
+                                            <i class="fas fa-pause"></i>
+                                        </button>
+                                        <button class="action-button btn-success" title="Yapılan Ekle">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        <button class="action-button btn-primary" title="İşi Bitir">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                    break;
+                            }
+
+                            <button class="action-button btn-info" title="Yapılanları Gör">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-button btn-secondary" title="Düzenle">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button class="action-button btn-danger" title="Planımdan Çıkar">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

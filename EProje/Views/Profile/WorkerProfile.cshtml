@@ -1,0 +1,662 @@
+﻿@{
+    ViewData["Title"] = "Çalışanlar";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@using EProjeEntities
+@using System.Security.Claims
+@model List<Worker>
+
+@{
+    var isLoggedIn = User.Identity.IsAuthenticated;
+    var fullName = isLoggedIn ? User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value : null;
+    var initials = fullName != null ? string.Concat(fullName.Split(" ").Select(s => s[0])) : "G";
+    var role = isLoggedIn ? User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value : null;
+    var permissionsJson = isLoggedIn ? User.Claims.FirstOrDefault(c => c.Type == "Permissions")?.Value : null;
+    var allowedPages = !string.IsNullOrEmpty(permissionsJson) ? System.Text.Json.JsonSerializer.Deserialize<List<string>>(permissionsJson) : new List<string>();
+}
+
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container py-5">
+        <h1 class="display-4 text-white">Çalışanlar Yönetimi</h1>
+        <p class="lead text-white-50">Çalışanlarınızı kolayca yönetin</p>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row pt-4">
+        @foreach (var worker in Model)
+        {
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="menu-card h-100 border-0 shadow-lg">
+                    <div class="card-img-container">
+                        <img src="@worker.Image" alt="@worker.Firstname @worker.Lastname" class="card-img-top">
+                        <div class="card-img-overlay d-flex align-items-end">
+                            <h3 class="card-title text-white text-shadow">@worker.Firstname @worker.Lastname</h3>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between gap-2">
+                            @if (role == "Admin" || allowedPages.Contains("UpdateWorker"))
+                            {
+                                <a href="#">
+                                    <button class="readmore-btn edit-worker-btn"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#workerModal"
+                                            data-id="@worker.Id"
+                                            data-firstname="@worker.Firstname"
+                                            data-lastname="@worker.Lastname"
+                                            data-image="@worker.Image"
+                                            data-email="@worker.Email"
+                                            data-password="@worker.Password"
+                                            data-permissions="@worker.RolePermissions">
+                                        <span class="book-wrapper">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 fill="rgb(86, 69, 117)"
+                                                 viewBox="0 0 126 75"
+                                                 class="book">
+                                                <rect stroke-width="3"
+                                                      stroke="#fff"
+                                                      rx="7.5"
+                                                      height="70"
+                                                      width="121"
+                                                      y="2.5"
+                                                      x="2.5"></rect>
+                                                <line stroke-width="3" stroke="#fff" y2="75" x2="63.5" x1="63.5"></line>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M25 20H50"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M101 20H76"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M16 30L50 30"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M110 30L76 30"></path>
+                                            </svg>
+
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 fill="none"
+                                                 viewBox="0 0 65 75"
+                                                 class="book-page">
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M40 20H15"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M49 30L15 30"></path>
+                                                <path stroke-width="3"
+                                                      stroke="#fff"
+                                                      d="M2.5 2.5H55C59.1421 2.5 62.5 5.85786 62.5 10V65C62.5 69.1421 59.1421 72.5 55 72.5H2.5V2.5Z"></path>
+                                            </svg>
+                                        </span>
+                                        <span class="text"> Çalışan Bilgisi Düzenle </span>
+                                    </button>
+                                </a>
+                            }
+                            @if (role == "Admin" || allowedPages.Contains("DeleteWorker"))
+                            {
+                                <a href="#">
+                                    <button class="noselect delete-worker-btn" data-id="@worker.Id">
+                                        <span class="text">Çalışanı Çıkar</span>
+                                        <span class="icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                                                <path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"></path>
+                                            </svg>
+                                        </span>
+                                    </button>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@if (role == "Admin" || allowedPages.Contains("AddWorker"))
+{
+    <div class="d-flex justify-content-end mb-4">
+        <button class="addimg"
+                data-bs-toggle="modal"
+                data-bs-target="#workerModal">
+            <span class="addimg__text">Çalışan Ekle</span>
+            <span class="addimg__icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
+        </button>
+    </div>
+}
+
+@if (role == "Admin" || allowedPages.Contains("AddWorker") || allowedPages.Contains("UpdateWorker"))
+{
+    <!-- Modal Başlangıcı -->
+    <div class="modal fade" id="workerModal" tabindex="-1" aria-labelledby="workerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="categoryModalLabel">Çalışan Detayları</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="image-upload-container mb-4">
+                                <label for="image-upload" class="upload-area">
+                                    <div class="upload-content">
+                                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                        <h5>Resim Yükle</h5>
+                                        <p class="text-muted mb-1">Çalışanınızın resmini seçmek için tıklayın!</p>
+                                        <small class="text-muted">PNG, JPG (Max. 2MB)</small>
+                                    </div>
+                                    <img id="preview" class="preview-image" alt="Önizleme">
+                                    <input type="file" id="image-upload" class="d-none" accept="image/*">
+                                </label>
+                                <div class="image-requirements text-muted mt-2">
+                                    <small>Önerilen boyut: 800x400px</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-4">
+                                <label for="workerName" class="form-label fw-bold">Çalışan İsmi*</label>
+                                <input type="text" class="form-control form-control-lg" id="workerName"
+                                       placeholder="Buraya çalışanın ismini yazın..." required>
+                            </div>
+                            <div class="form-group mb-4">
+                                <label for="workerSurname" class="form-label fw-bold">Çalışan Soyismi*</label>
+                                <input type="text" class="form-control form-control-lg" id="workerSurname"
+                                       placeholder="Buraya çalışanın soyismini yazın..." required>
+                            </div>
+                            <div class="form-group mb-4">
+                                <label for="workerEmail" class="form-label fw-bold">Çalışan Email*</label>
+                                <input type="email" class="form-control form-control-lg" id="workerEmail"
+                                       placeholder="Buraya çalışanın email adresini yazın..." required>
+                            </div>
+                            <div class="form-group mb-4">
+                                <label for="workerPassword" class="form-label fw-bold">Çalışan Şifre*</label>
+                                <input type="password" class="form-control form-control-lg" id="workerPassword"
+                                       placeholder="Buraya çalışanın şifresini yazın..." required>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold mb-3">Çalışan Yetkileri</label>
+                            <div class="accordion" id="permissions-container">
+                                <!-- Proje Yönetimi -->
+                                <div class="accordion-item border-0 mb-3">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-light fw-bold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMenu">
+                                            <i class="fas fa-list-alt me-2 text-info"></i> Proje Yönetimi
+                                        </button>
+                                    </h2>
+                                    <div id="collapseMenu" class="accordion-collapse collapse" data-bs-parent="#permissions-container">
+                                        <div class="accordion-body pt-0">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <h6 class="fw-bold text-muted mb-3">Tüm Projeler</h6>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="ViewMenuCategory" id="permViewMenu">
+                                                        <label class="label" for="permViewMenu">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Görüntüleme</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="AddMenuCategory" id="permAddMenu">
+                                                        <label class="label" for="permAddMenu">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Ekleme</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="UpdateMenuCategory" id="permUpdateMenu">
+                                                        <label class="label" for="permUpdateMenu">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Güncelleme</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="DeleteMenuCategory" id="permDeleteMenu">
+                                                        <label class="label" for="permDeleteMenu">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Silme</span>
+                                                        </label>
+                                                    </div>
+
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6 class="fw-bold text-muted mb-3">Projelerim</h6>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="ViewSubMenuCategory" id="permViewSubMenu">
+                                                        <label class="label" for="permViewSubMenu">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Görüntüleme</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="AddSubMenuCategory" id="permAddSubMenu">
+                                                        <label class="label" for="permAddSubMenu">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Ekleme</span>
+                                                        </label>
+                                                    </div>
+
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="UpdateSubMenuCategory" id="permUpdateSubMenu">
+                                                        <label class="label" for="permUpdateSubMenu">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Güncelleme</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="DeleteSubMenuCategory" id="permDeleteSubMenu">
+                                                        <label class="label" for="permDeleteSubMenu">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Silme</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Çalışan Yönetimi -->
+                                <div class="accordion-item border-0 mb-3">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-light fw-bold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWorkers">
+                                            <i class="fas fa-users me-2 text-primary"></i> Çalışan Yönetimi
+                                        </button>
+                                    </h2>
+                                    <div id="collapseWorkers" class="accordion-collapse collapse" data-bs-parent="#permissions-container">
+                                        <div class="accordion-body pt-0">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="ViewWorker" id="permViewWorker">
+                                                        <label class="label" for="permViewWorker">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Çalışanları Görüntüle</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="AddWorker" id="permAddWorker">
+                                                        <label class="label" for="permAddWorker">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Çalışan Ekle</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="UpdateWorker" id="permUpdateWorker">
+                                                        <label class="label" for="permUpdateWorker">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Çalışan Güncelle</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="DeleteWorker" id="permDeleteWorker">
+                                                        <label class="label" for="permDeleteWorker">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Çalışan Sil</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Ofis Yönetimi -->
+                                <div class="accordion-item border-0 mb-3">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button bg-light fw-bold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOthers">
+                                            <i class="fas fa-store me-2 text-success"></i> Ofis Yönetimi
+                                        </button>
+                                    </h2>
+                                    <div id="collapseOthers" class="accordion-collapse collapse" data-bs-parent="#permissions-container">
+                                        <div class="accordion-body pt-0">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <h6 class="fw-bold text-muted mb-3">Kafe Bilgileri</h6>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="CafeProfile" id="permCafeProfile">
+                                                        <label class="label" for="permCafeProfile">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Kafe Profili</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="CafeInformation" id="permViewCafeProfile">
+                                                        <label class="label" for="permViewCafeProfile">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Bilgileri Gör</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="UpdateCafe" id="permUpdateCafeProfile">
+                                                        <label class="label" for="permUpdateCafeProfile">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Bilgileri Güncelle</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <h6 class="fw-bold text-muted mb-3">Bölüm Bilgileri</h6>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="ViewSection" id="permViewSection">
+                                                        <label class="label" for="permViewSection">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Bölümlerini Gör</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="AddSection" id="permAddSection">
+                                                        <label class="label" for="permAddSection">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Bölüm Ekle</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="UpdateSection" id="permUpdateSection">
+                                                        <label class="label" for="permUpdateSection">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Bölümü Güncelle</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="DeleteSection" id="permDeleteSection">
+                                                        <label class="label" for="permDeleteSection">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Bölümü Sil</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <h6 class="fw-bold text-muted mb-3">Masa Bilgileri</h6>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="ViewSectionTable" id="permViewSectionTable">
+                                                        <label class="label" for="permViewSectionTable">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Masaları Gör</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="AddTable" id="permAddTable">
+                                                        <label class="label" for="permAddTable">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Masa Ekle</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="UpdateTable" id="permUpdateTable">
+                                                        <label class="label" for="permUpdateTable">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Masa Güncelle</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="checkbox-wrapper">
+                                                        <input class="check" type="checkbox" value="DeleteTable" id="permDeleteTable">
+                                                        <label class="label" for="permDeleteTable">
+                                                            <svg width="45" height="45" viewBox="0 0 95 95">
+                                                                <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                                                <g transform="translate(0,-952.36222)">
+                                                                    <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                                                </g>
+                                                            </svg>
+                                                            <span>Masa Sil</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Vazgeç
+                    </button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4" id="saveWorkerBtn">
+                        <i class="fas fa-save me-2"></i>Kaydet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+    // Modal açılırken formu ayarla
+    document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
+        button.addEventListener('click', function () {
+            const modal = document.getElementById('workerModal');
+
+            const isEdit = this.classList.contains('edit-worker-btn');
+            modal.setAttribute('data-mode', isEdit ? 'edit' : 'create');
+
+            const permissions = this.getAttribute('data-permissions');
+            if (permissions) {
+                const permsArray = JSON.parse(permissions);
+                document.querySelectorAll('#permissions-container input[type="checkbox"]').forEach(chk => {
+                    chk.checked = permsArray.includes(chk.value);
+                });
+            } else {
+                document.querySelectorAll('#permissions-container input[type="checkbox"]').forEach(chk => {
+                    chk.checked = false;
+                });
+            }
+
+            if (isEdit) {
+                document.querySelector('input[placeholder="Buraya çalışanın ismini yazın..."]').value = this.getAttribute('data-firstname');
+                document.querySelector('input[placeholder="Buraya çalışanın soyismini yazın..."]').value = this.getAttribute('data-lastname');
+                document.querySelector('input[placeholder="Buraya çalışanın email adresini yazın..."]').value = this.getAttribute('data-email');
+                document.querySelector('input[placeholder="Buraya çalışanın şifresini yazın..."]').value = this.getAttribute('data-password');
+                const image = this.getAttribute('data-image');
+                if (image) document.getElementById('preview').src = image;
+                modal.setAttribute('data-id', this.getAttribute('data-id'));
+            } else {
+                document.querySelector('input[placeholder="Buraya çalışanın ismini yazın..."]').value = "";
+                document.querySelector('input[placeholder="Buraya çalışanın soyismini yazın..."]').value = "";
+                document.querySelector('input[placeholder="Buraya çalışanın email adresini yazın..."]').value = "";
+                document.querySelector('input[placeholder="Buraya çalışanın şifresini yazın..."]').value = "";
+                document.getElementById('preview').src = "";
+                modal.removeAttribute('data-id');
+            }
+        });
+    });
+
+    document.querySelector('#workerModal .btn-primary').addEventListener('click', () => {
+        const modal = document.getElementById('workerModal');
+        const mode = modal.getAttribute('data-mode');
+        const id = modal.getAttribute('data-id');
+
+        const firstname = document.querySelector('input[placeholder="Buraya çalışanın ismini yazın..."]').value;
+        const lastname = document.querySelector('input[placeholder="Buraya çalışanın soyismini yazın..."]').value;
+        const email = document.querySelector('input[placeholder="Buraya çalışanın email adresini yazın..."]').value;
+        const password = document.querySelector('input[placeholder="Buraya çalışanın şifresini yazın..."]').value;
+        const imageSrc = document.getElementById('preview').src;
+
+        const selectedPermissions = [];
+        document.querySelectorAll('#permissions-container input[type="checkbox"]:checked').forEach(chk => {
+            selectedPermissions.push(chk.value);
+        });
+
+        const payload = {
+            id: mode === 'edit' ? id : '00000000-0000-0000-0000-000000000000',
+            firstname: firstname,
+            lastname: lastname,
+            imageSrc: imageSrc,
+            email: email,
+            password: password,
+            rolePermissions: JSON.stringify(selectedPermissions),
+            active: true,
+        };
+
+        const endpoint = mode === 'edit' ? '/Profile/UpdateWorker' : '/Profile/AddWorker';
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message || "İşlem başarısız.");
+            }
+        })
+        .catch(() => alert('Sunucu hatası oluştu.'));
+    });
+
+    document.querySelectorAll('.delete-worker-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const workerId = this.getAttribute('data-id');
+            if (!confirm("Bu çalışanı silmek istiyor musunuz?")) return;
+
+            fetch('/Profile/DeleteWorker', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: workerId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Silme işlemi başarısız oldu.');
+                    }
+                })
+                .catch(() => alert('Sunucu hatası oluştu.'));
+        });
+    });
+</script>

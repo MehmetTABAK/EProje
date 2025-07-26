@@ -1,0 +1,285 @@
+﻿@{
+    ViewData["Title"] = "Tüm Projeler";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@model List<EProjeEntities.DTOs.AllProjectDTO>
+@using System.Security.Claims
+
+@{
+    var isLoggedIn = User.Identity.IsAuthenticated;
+    var fullName = isLoggedIn ? User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value : null;
+    var initials = fullName != null ? string.Concat(fullName.Split(" ").Select(s => s[0])) : "G";
+    var role = isLoggedIn ? User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value : null;
+    var permissionsJson = isLoggedIn ? User.Claims.FirstOrDefault(c => c.Type == "Permissions")?.Value : null;
+    var allowedPages = !string.IsNullOrEmpty(permissionsJson) ? System.Text.Json.JsonSerializer.Deserialize<List<string>>(permissionsJson) : new List<string>();
+}
+
+<style>
+    .project-card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+        }
+
+    .project-title {
+        font-size: 1.5rem;
+        color: #333;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .project-stats {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .stat-item {
+        text-align: center;
+        flex: 1;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .stat-value {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #333;
+    }
+
+    h1 {
+        color: #333;
+        margin-bottom: 30px;
+    }
+</style>
+
+<div class="container">
+    <h1>Tüm Projeler</h1>
+
+    @foreach (var project in Model)
+    {
+        <div class="project-card" onclick="location.href='@Url.Action("ProjectDetails", new { projectId = project.Id })'">
+
+            <div class="project-title">@project.ProjectName</div>
+
+            <div class="project-stats">
+                <div class="stat-item">
+                    <div class="stat-label">Tamamlanan</div>
+                    <div class="stat-value">@project.CompletedCount</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Yapılan</div>
+                    <div class="stat-value">@project.InProgressCount</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Yapılacak</div>
+                    <div class="stat-value">@project.TodoCount</div>
+                </div>
+            </div>
+        </div>
+
+        <a href="#">
+            <button class="readmore-btn edit-project-btn"
+                    data-bs-toggle="modal"
+                    data-bs-target="#projectModal"
+                    data-id="@project.Id"
+                    data-name="@project.ProjectName">
+                <span class="book-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         fill="rgb(86, 69, 117)"
+                         viewBox="0 0 126 75"
+                         class="book">
+                        <rect stroke-width="3"
+                              stroke="#fff"
+                              rx="7.5"
+                              height="70"
+                              width="121"
+                              y="2.5"
+                              x="2.5"></rect>
+                        <line stroke-width="3" stroke="#fff" y2="75" x2="63.5" x1="63.5"></line>
+                        <path stroke-linecap="round"
+                              stroke-width="4"
+                              stroke="#fff"
+                              d="M25 20H50"></path>
+                        <path stroke-linecap="round"
+                              stroke-width="4"
+                              stroke="#fff"
+                              d="M101 20H76"></path>
+                        <path stroke-linecap="round"
+                              stroke-width="4"
+                              stroke="#fff"
+                              d="M16 30L50 30"></path>
+                        <path stroke-linecap="round"
+                              stroke-width="4"
+                              stroke="#fff"
+                              d="M110 30L76 30"></path>
+                    </svg>
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         fill="none"
+                         viewBox="0 0 65 75"
+                         class="book-page">
+                        <path stroke-linecap="round"
+                              stroke-width="4"
+                              stroke="#fff"
+                              d="M40 20H15"></path>
+                        <path stroke-linecap="round"
+                              stroke-width="4"
+                              stroke="#fff"
+                              d="M49 30L15 30"></path>
+                        <path stroke-width="3"
+                              stroke="#fff"
+                              d="M2.5 2.5H55C59.1421 2.5 62.5 5.85786 62.5 10V65C62.5 69.1421 59.1421 72.5 55 72.5H2.5V2.5Z"></path>
+                    </svg>
+                </span>
+                <span class="text">Projeyi Düzenle </span>
+            </button>
+        </a>
+        <a href="#">
+            <button class="noselect delete-project-btn" data-id="@project.Id">
+                <span class="text">Projeyi Kaldır</span>
+                <span class="icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                        <path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"></path>
+                    </svg>
+                </span>
+            </button>
+        </a>
+    }
+</div>
+
+@if (role == "Admin" || allowedPages.Contains("AddMenuCategory"))
+{
+    <div class="d-flex justify-content-end mb-4">
+        <button class="addimg"
+                data-bs-toggle="modal"
+                data-bs-target="#projectModal">
+            <span class="addimg__text">Üst Menü Ekle</span>
+            <span class="addimg__icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
+        </button>
+    </div>
+}
+
+@if (role == "Admin" || allowedPages.Contains("AddMenuCategory") || allowedPages.Contains("UpdateMenuCategory"))
+{
+    <!-- Modal Başlangıcı -->
+    <div class="modal fade" id="projectModal" tabindex="-1" aria-labelledby="projectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0">
+                <div class="modal-header bg-gradient-primary text-white">
+                    <h5 class="modal-title" id="projectModalLabel">Proje Yönetimi</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group mb-4">
+                                <label for="projectName" class="form-label fw-bold">Proje Adı*</label>
+                                <input type="text" class="form-control form-control-lg" id="projectName"
+                                       placeholder="Örnek: EProje" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Vazgeç
+                    </button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4" id="saveProjectBtn">
+                        <i class="fas fa-save me-2"></i>Kaydet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+    // Modal açılırken formu ayarla
+    document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
+        button.addEventListener('click', function () {
+            const modal = document.getElementById('projectModal');
+
+            const isEdit = this.classList.contains('edit-project-btn');
+            modal.setAttribute('data-mode', isEdit ? 'edit' : 'create');
+
+            if (isEdit) {
+                document.querySelector('input[placeholder="Örnek: EProje"]').value = this.getAttribute('data-name');
+                modal.setAttribute('data-id', this.getAttribute('data-id'));
+            } else {
+                document.querySelector('input[placeholder="Örnek: EProje"]').value = "";
+                modal.removeAttribute('data-id');
+            }
+        });
+    });
+
+    // Project kaydetme ve güncelleme işlemleri
+    document.querySelector('#projectModal .btn-primary').addEventListener('click', () => {
+        const modal = document.getElementById('projectModal');
+        const mode = modal.getAttribute('data-mode');
+        const id = modal.getAttribute('data-id');
+
+        const name = document.querySelector('input[placeholder="Örnek: EProje"]').value;
+
+        const payload = {
+            id: mode === 'edit' ? id : '00000000-0000-0000-0000-000000000000',
+            projectName: name,
+        };
+
+        const endpoint = mode === 'edit' ? '/ApplicationDevelopmentTracking/UpdateProject' : '/ApplicationDevelopmentTracking/CreateProject';
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message || "İşlem başarısız.");
+            }
+        })
+        .catch(() => alert('Sunucu hatası oluştu.'));
+    });
+
+    // Project silme işlemi
+    document.querySelectorAll('.delete-project-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const projectId = this.getAttribute('data-id');
+            if (!confirm("Bu projeyi sildiğiniz zaman içerdiği tüm işler de silinecektir. Yine de silmek istiyor musunuz?")) return;
+
+            fetch('/ApplicationDevelopmentTracking/DeleteProject', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: projectId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Silme işlemi başarısız oldu.');
+                    }
+                })
+                .catch(() => alert('Sunucu hatası oluştu.'));
+        });
+    });
+</script>

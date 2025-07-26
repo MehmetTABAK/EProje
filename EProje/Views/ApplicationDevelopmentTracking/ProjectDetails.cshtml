@@ -1,0 +1,476 @@
+﻿@{
+    ViewData["Title"] = "Proje Detayları";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@model List<EProjeEntities.DTOs.ProjectDetailsDTO>
+@using System.Security.Claims
+
+@{
+    var isLoggedIn = User.Identity.IsAuthenticated;
+    var fullName = isLoggedIn ? User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value : null;
+    var initials = fullName != null ? string.Concat(fullName.Split(" ").Select(s => s[0])) : "G";
+    var role = isLoggedIn ? User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value : null;
+    var permissionsJson = isLoggedIn ? User.Claims.FirstOrDefault(c => c.Type == "Permissions")?.Value : null;
+    var allowedPages = !string.IsNullOrEmpty(permissionsJson) ? System.Text.Json.JsonSerializer.Deserialize<List<string>>(permissionsJson) : new List<string>();
+}
+
+<style>
+    .project-header {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .project-title {
+        font-size: 1.8rem;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .task-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+        .task-table th, .task-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .task-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .task-table tr:last-child td {
+            border-bottom: none;
+        }
+
+    .completed-task {
+        background-color: #e8f5e9;
+    }
+
+    .in-progress-task {
+        background-color: #fff8e1;
+    }
+
+    .todo-task {
+        background-color: #f5f5f5;
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+        margin-right: 5px;
+    }
+
+    .status-completed {
+        background-color: #c8e6c9;
+        color: #256029;
+    }
+
+    .status-in-progress {
+        background-color: #ffecb3;
+        color: #7a4f01;
+    }
+
+    .status-todo {
+        background-color: #e0e0e0;
+        color: #3e3e3e;
+    }
+
+    .back-button {
+        display: inline-block;
+        margin-bottom: 20px;
+        padding: 8px 16px;
+        background-color: #e0e0e0;
+        border-radius: 4px;
+        text-decoration: none;
+        color: #333;
+        font-weight: 500;
+    }
+
+        .back-button:hover {
+            background-color: #d0d0d0;
+        }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .action-button {
+        padding: 6px 12px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 0.8rem;
+        border: none;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .btn-primary {
+        background-color: #1976d2;
+        color: white;
+    }
+
+    .btn-secondary {
+        background-color: #424242;
+        color: white;
+    }
+
+    .btn-success {
+        background-color: #388e3c;
+        color: white;
+    }
+
+    .btn-warning {
+        background-color: #ffa000;
+        color: white;
+    }
+
+    .btn-danger {
+        background-color: #d32f2f;
+        color: white;
+    }
+
+    .btn-info {
+        background-color: #0288d1;
+        color: white;
+    }
+
+    .form-select {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .form-select-lg {
+        height: calc(1.5em + 1rem + 2px);
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        font-size: 1.25rem;
+    }
+</style>
+
+<div class="container">
+    <a asp-action="AllProjects" class="back-button">← Tüm Projelere Dön</a>
+
+    <div class="project-header">
+        <h1 class="project-title">@ViewBag.ProjectName</h1>
+    </div>
+
+    <table class="task-table">
+        <thead>
+            <tr>
+                <th>İş İsmi</th>
+                <th>İş Açıklaması</th>
+                <th>İşi Giren Kişi</th>
+                <th>İş Kayıt Tarihi</th>
+                <th>Başlangıç Tarihi</th>
+                <th>Bitiş Tarihi</th>
+                <th>Harcanan Zaman</th>
+                <th>Atanan Kişi</th>
+                <th>Son Düzenleyen Kişi</th>
+                <th>Son Düzenleme Tarihi</th>
+                <th>İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var work in Model)
+            {
+                var rowClass = work.Status == 3 ? "completed-task" :
+                work.Status == 2 ? "in-progress-task" : "todo-task";
+
+                <tr class="@rowClass">
+                    <td>@work.WorkName</td>
+                    <td>@work.WorkDetail</td>
+                    <td>@work.RegistrationUserName</td>
+                    <td>@work.RegistrationDate.ToString("dd.MM.yyyy HH:mm")</td>
+                    <td>@(work.WorkStartDate?.ToString("dd.MM.yyyy") ?? "-")</td>
+                    <td>@(work.WorkEndDate?.ToString("dd.MM.yyyy") ?? "-")</td>
+                    <td>@(work.TimeSpend ?? "-")</td>
+                    <td>@(work.WorkerName ?? "-")</td>
+                    <td>@(work.CorrectionUserName ?? "-")</td>
+                    <td>@(work.CorrectionDate?.ToString("dd.MM.yyyy HH:mm") ?? "-")</td>
+                    <td>
+                        <div class="action-buttons">
+                            @switch (work.Status)
+                            {
+                                case 1: // Yapılacak
+                                        <button class="action-button btn-primary" title="Başlat">
+                                            <i class="fas fa-play"></i>
+                                        </button>
+                                    break;
+
+                                case 2: // Yapılıyor
+                                        <button class="action-button btn-warning" title="Duraklat">
+                                            <i class="fas fa-pause"></i>
+                                        </button>
+                                        <button class="action-button btn-success" title="Yapılan Ekle">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        <button class="action-button btn-primary" title="İşi Bitir">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                    break;
+
+                                case 3: // Tamamlandı
+                                        <button class="action-button btn-primary" title="Tekrar Başlat">
+                                            <i class="fas fa-undo"></i>
+                                        </button>
+                                    break;
+                            }
+
+                            <button class="action-button btn-info" title="Yapılanları Gör">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-button btn-secondary edit-work-btn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#workModal"
+                                    data-id="@work.Id"
+                                    data-name="@work.WorkName"
+                                    data-detail="@work.WorkDetail"
+                                    data-job-assigned="@work.IsJobAssigned.ToString().ToLower()"
+                                    data-project="@work.ProjectName"
+                                    data-project-id="@work.ProjectId"
+                                    data-worker-id="@(work.WorkerId != null && work.WorkerId != Guid.Empty ? work.WorkerId.ToString() : "")"
+                                    title="Düzenle">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button class="action-button btn-danger delete-work-btn"
+                                    data-id="@work.Id"
+                                    title="Sil">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (role == "Admin" || allowedPages.Contains("AddMenuCategory"))
+{
+    <div class="d-flex justify-content-end mb-4">
+        <button class="addimg"
+                data-bs-toggle="modal"
+                data-bs-target="#workModal"
+                data-project="@ViewBag.ProjectName"
+                data-project-id="@ViewBag.ProjectId">
+            <span class="addimg__text">İş Ekle</span>
+            <span class="addimg__icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
+        </button>
+    </div>
+}
+
+@if (role == "Admin" || allowedPages.Contains("AddProduct") || allowedPages.Contains("UpdateProduct"))
+{
+    <div class="modal fade" id="workModal" tabindex="-1" aria-labelledby="workModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0">
+                <div class="modal-header bg-gradient-primary text-white">
+                    <h5 class="modal-title" id="workModalLabel">İş Yönetimi</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group mb-4">
+                                <label for="projectName" class="form-label fw-bold">Proje Adı*</label>
+                                <input type="text" class="form-control" id="projectName" readonly>
+                            </div>
+                            <div class="form-group mb-4">
+                                <label for="workName" class="form-label fw-bold">İş İsmi*</label>
+                                <input type="text" class="form-control form-control-lg" id="workName"
+                                       placeholder="Yapılacak işin ismini yazınız!" required>
+                            </div>
+                            <div class="form-group mb-4">
+                                <label for="workDetail" class="form-label fw-bold">İş Detayı*</label>
+                                <input type="text" class="form-control form-control-lg" id="workDetail"
+                                       placeholder="Yapılacak işin detaylı açıklamasını yapınız!" required>
+                            </div>
+                            <div class="form-group mb-4">
+                                <label class="form-label fw-bold">İşi Ata</label>
+                                <div class="checkbox-wrapper">
+                                    <input type="radio" name="discount" value="yes" class="check" id="check1-61">
+                                    <label for="check1-61" class="label">
+                                        <svg width="45" height="45" viewBox="0 0 95 95">
+                                            <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                            <g transform="translate(0,-952.36222)">
+                                                <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                            </g>
+                                        </svg>
+                                        <span>Evet</span>
+                                    </label>
+
+                                    <input type="radio" name="discount" value="no" class="check" id="check1-62" checked>
+                                    <label for="check1-62" class="label">
+                                        <svg width="45" height="45" viewBox="0 0 95 95">
+                                            <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                            <g transform="translate(0,-952.36222)">
+                                                <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                            </g>
+                                        </svg>
+                                        <span>Hayır</span>
+                                    </label>
+                                </div>
+
+                                <div id="discountContainer" class="discount-hidden">
+                                    <label class="form-label fw-bold">Atanacak Kişi*</label>
+                                    <select id="workerSelect" class="form-select form-select-lg">
+                                        <option value="">Kişi Seçin</option>
+                                        @foreach (var worker in ViewBag.Workers)
+                                        {
+                                            <option value="@worker.Id">@worker.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Vazgeç
+                    </button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4" id="saveWorkBtn">
+                        <i class="fas fa-save me-2"></i>Kaydet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" id="projectId">
+}
+
+<script>
+    // Modal açılırken formu ayarla
+    document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
+        button.addEventListener('click', function () {
+            const modal = document.getElementById('workModal');
+            const projectName = this.getAttribute('data-project');
+            const projectId = this.getAttribute('data-project-id');
+
+            document.getElementById('projectName').value = projectName || '';
+            document.getElementById('projectId').value = projectId || '';
+
+            const isEdit = this.classList.contains('edit-work-btn');
+            modal.setAttribute('data-mode', isEdit ? 'edit' : 'create');
+
+            if (isEdit) {
+                document.querySelector('input[placeholder="Yapılacak işin ismini yazınız!"]').value = this.getAttribute('data-name');
+                document.querySelector('input[placeholder="Yapılacak işin detaylı açıklamasını yapınız!"]').value = this.getAttribute('data-detail');
+
+                const giveTheJob = this.getAttribute('data-job-assigned') === "true";
+                const workerId = this.getAttribute('data-worker-id');
+
+                if (giveTheJob) {
+                    document.querySelector('input[name="discount"][value="yes"]').checked = true;
+                    document.getElementById('discountContainer').classList.remove('discount-hidden');
+                    document.getElementById('workerSelect').value = workerId || "";
+                } else {
+                    document.querySelector('input[name="discount"][value="no"]').checked = true;
+                    document.getElementById('discountContainer').classList.add('discount-hidden');
+                    document.getElementById('workerSelect').value = "";
+                }
+
+                modal.setAttribute('data-id', this.getAttribute('data-id'));
+            } else {
+                document.querySelector('input[placeholder="Yapılacak işin ismini yazınız!"]').value = "";
+                document.querySelector('input[placeholder="Yapılacak işin detaylı açıklamasını yapınız!"]').value = "";
+                document.querySelector('input[name="discount"][value="no"]').checked = true;
+                document.getElementById('discountContainer').classList.add('discount-hidden');
+                document.getElementById('workerSelect').value = "";
+                modal.removeAttribute('data-id');
+            }
+        });
+    });
+
+    // Ürün kaydetme ve güncelleme işlemleri
+    document.querySelector('#workModal .btn-primary').addEventListener('click', () => {
+        const modal = document.getElementById('workModal');
+        const mode = modal.getAttribute('data-mode');
+        const id = modal.getAttribute('data-id');
+
+        const name = document.querySelector('input[placeholder="Yapılacak işin ismini yazınız!"]').value;
+        const detail = document.querySelector('input[placeholder="Yapılacak işin detaylı açıklamasını yapınız!"]').value;
+        const giveTheJob = document.querySelector('input[name="discount"]:checked').value === 'yes';
+        const workerId = giveTheJob ? document.getElementById('workerSelect').value : null;
+
+        const projectId = document.getElementById('projectId').value;
+
+        const payload = {
+            id: mode === 'edit' ? id : '00000000-0000-0000-0000-000000000000',
+            workName: name,
+            workDetail: detail,
+            workerId: workerId,
+            projectId: projectId,
+            assignJob: giveTheJob
+        };
+
+        const endpoint = mode === 'edit' ? '/ApplicationDevelopmentTracking/UpdateWork' : '/ApplicationDevelopmentTracking/CreateWork';
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message || "İşlem başarısız.");
+            }
+        })
+        .catch(() => alert('Sunucu hatası oluştu.'));
+    });
+
+    // Ürün silme işlemi
+    document.querySelectorAll('.delete-work-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const workId = this.getAttribute('data-id');
+            if (!confirm("Bu işi silmek istiyor musunuz?")) return;
+
+            fetch('/ApplicationDevelopmentTracking/DeleteWork', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: workId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Silme işlemi başarısız oldu.');
+                    }
+                })
+                .catch(() => alert('Sunucu hatası oluştu.'));
+        });
+    });
+</script>
